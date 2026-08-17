@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #08040f;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124, 92, 255, 0.35), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(255, 61, 110, 0.22), transparent),
+    radial-gradient(ellipse 70% 60% at 90% 100%, rgba(45, 216, 255, 0.16), transparent),
+    linear-gradient(180deg, #0a0616 0%, #08040f 40%, #0c0718 100%);
+  background-attachment: fixed;
+  color: #f1e9ff;
+  min-height: 100vh;
+}
+
+/* faint starfield texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.55) 1px, transparent 1px);
+  background-size: 3px 3px;
+  mask-image: radial-gradient(ellipse 100% 60% at 50% 0%, black, transparent 70%);
+}
+
+.card-shadow {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+
+/* Foil gradient headline text — the app's signature "wow" moment */
+.foil-text {
+  background: linear-gradient(90deg, #f6c945, #ff3d6e, #7c5cff, #2dd8ff, #f6c945);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(14px);
+}
+
+.glass-strong {
+  background: rgba(18, 10, 36, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(18px);
+}
+
+.badge-collector {
+  background: linear-gradient(135deg, #7c5cff, #4c2fd6);
+  color: #fdf7ff;
+  box-shadow: 0 0 16px rgba(124, 92, 255, 0.45);
+}
+
+.badge-dealer {
+  background: linear-gradient(135deg, #ff3d6e, #b3123f);
+  color: #fdf7ff;
+  box-shadow: 0 0 16px rgba(255, 61, 110, 0.4);
+}
+
+/* Foil shimmer sweep, for the foil-card checkbox / active version chip */
+.foil-shine {
+  position: relative;
+  overflow: hidden;
+}
+.foil-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.45) 48%, rgba(255, 255, 255, 0.05) 52%, transparent 70%);
+  background-size: 250% 100%;
+  animation: shimmer 2.5s linear infinite;
+  pointer-events: none;
+}
+
+::selection {
+  background: rgba(255, 61, 110, 0.4);
+  color: #fdf7ff;
+}
+
+::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7c5cff, #ff3d6e);
+  border-radius: 999px;
+}
