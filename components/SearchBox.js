@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 // Merges a `set:<code>` token into a query string, replacing any existing
@@ -10,14 +10,16 @@ function withSetToken(q, code) {
   return code ? `${stripped} set:${code}`.trim() : stripped;
 }
 
-export default function SearchBox() {
+export default function SearchBox({ compact = false, autoFocusOnNavigate = true }) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [q, setQ] = useState(searchParams.get('q') || '');
   const [sets, setSets] = useState([]);
   const [editionQuery, setEditionQuery] = useState('');
   const [editionOpen, setEditionOpen] = useState(false);
   const boxRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     fetch('/api/cards/sets')
@@ -25,6 +27,14 @@ export default function SearchBox() {
       .then((d) => setSets(d.sets || []))
       .catch(() => setSets([]));
   }, []);
+
+  // Navbar mounts once in the root layout and never remounts on route
+  // changes, so autoFocus (an HTML attribute that only fires on mount)
+  // wouldn't refire per page — refocus manually whenever the route changes
+  // so the cursor is always ready to type without an extra click.
+  useEffect(() => {
+    if (autoFocusOnNavigate) inputRef.current?.focus();
+  }, [pathname, autoFocusOnNavigate]);
 
   useEffect(() => {
     function onClickOutside(e) {
@@ -58,28 +68,40 @@ export default function SearchBox() {
 
   return (
     <div ref={boxRef} className="relative">
-      <form onSubmit={submit} className="glass flex flex-wrap items-center gap-1.5 rounded-full p-1.5 shadow-glow sm:flex-nowrap">
+      <form
+        onSubmit={submit}
+        className={`glass flex flex-wrap items-center gap-1.5 rounded-full shadow-glow sm:flex-nowrap ${
+          compact ? 'p-1' : 'p-1.5'
+        }`}
+      >
         <input
+          ref={inputRef}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search any Magic card, e.g. Lightning Bolt"
-          className="min-w-0 flex-1 rounded-full bg-transparent px-4 py-2 text-sm text-parchment placeholder:text-ink/40 focus:outline-none"
-        />
-        <button
-          type="button"
-          onClick={() => setEditionOpen((v) => !v)}
-          className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition ${
-            activeSet
-              ? 'border-gold/60 bg-gold/10 text-gold shadow-glow-gold'
-              : 'border-white/15 text-ink/60 hover:border-cyan/50 hover:text-cyan'
+          className={`min-w-0 flex-1 rounded-full bg-transparent text-parchment placeholder:text-ink/40 focus:outline-none ${
+            compact ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'
           }`}
-          title="Narrow your search to a specific edition/set"
-        >
-          ✦ {activeSet ? activeSet.name : 'Edition'}
-        </button>
+        />
+        {!compact && (
+          <button
+            type="button"
+            onClick={() => setEditionOpen((v) => !v)}
+            className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition ${
+              activeSet
+                ? 'border-gold/60 bg-gold/10 text-gold shadow-glow-gold'
+                : 'border-white/15 text-ink/60 hover:border-cyan/50 hover:text-cyan'
+            }`}
+            title="Narrow your search to a specific edition/set"
+          >
+            ✦ {activeSet ? activeSet.name : 'Edition'}
+          </button>
+        )}
         <button
           type="submit"
-          className="shrink-0 rounded-full bg-gradient-to-r from-forest to-cyan px-5 py-2 text-sm font-bold text-parchment transition hover:scale-105 hover:shadow-glow"
+          className={`shrink-0 rounded-full bg-gradient-to-r from-forest to-cyan font-bold text-parchment transition hover:scale-105 hover:shadow-glow ${
+            compact ? 'px-3 py-1.5 text-xs' : 'px-5 py-2 text-sm'
+          }`}
         >
           Search
         </button>
