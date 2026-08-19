@@ -7,6 +7,11 @@ import ValueHistoryChart from '../../components/ValueHistoryChart';
 import BiggestMovers from '../../components/BiggestMovers';
 import ScanImportModal from '../../components/ScanImportModal';
 
+// Photo-scan bulk add is built and working, but paused until the Anthropic
+// account backing it has a real credit balance — flip this back to true
+// once billing is set up in console.anthropic.com.
+const SCAN_FEATURE_ENABLED = false;
+
 function fmt(n) {
   return `$${Number(n || 0).toFixed(2)}`;
 }
@@ -82,15 +87,26 @@ export default function CollectionPage() {
         <h1 className="font-serif text-3xl font-black">
           <span className="foil-text">My Collection</span>
         </h1>
+        {/* Photo-scan bulk add is paused — the Anthropic account behind it has
+            no credit balance yet, so it can't actually work right now. Left
+            visible-but-disabled instead of hidden so it's clear this is
+            coming soon, not missing. Flip SCAN_FEATURE_ENABLED back on once
+            billing is set up. */}
         <button
-          onClick={() => setScanOpen(true)}
-          className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-ink/80 transition hover:border-gold/60 hover:text-gold"
+          disabled={!SCAN_FEATURE_ENABLED}
+          onClick={() => SCAN_FEATURE_ENABLED && setScanOpen(true)}
+          title={SCAN_FEATURE_ENABLED ? undefined : 'Coming back soon — billing setup in progress.'}
+          className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+            SCAN_FEATURE_ENABLED
+              ? 'border-white/15 text-ink/80 hover:border-gold/60 hover:text-gold'
+              : 'cursor-not-allowed border-white/10 text-ink/30'
+          }`}
         >
-          📷 Scan a photo to bulk add
+          🚧 📷 Scan a photo to bulk add — under renovation
         </button>
       </div>
 
-      {scanOpen && (
+      {scanOpen && SCAN_FEATURE_ENABLED && (
         <ScanImportModal
           onClose={() => setScanOpen(false)}
           onDone={() => {
