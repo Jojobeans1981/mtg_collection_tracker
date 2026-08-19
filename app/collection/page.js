@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '../../components/AuthProvider';
 import ValueHistoryChart from '../../components/ValueHistoryChart';
 import BiggestMovers from '../../components/BiggestMovers';
+import ScanImportModal from '../../components/ScanImportModal';
 
 function fmt(n) {
   return `$${Number(n || 0).toFixed(2)}`;
@@ -17,6 +18,7 @@ export default function CollectionPage() {
   const [fetching, setFetching] = useState(true);
   const [history, setHistory] = useState([]);
   const [movers, setMovers] = useState([]);
+  const [scanOpen, setScanOpen] = useState(false);
 
   async function load() {
     setFetching(true);
@@ -76,9 +78,26 @@ export default function CollectionPage() {
 
   return (
     <div>
-      <h1 className="mb-5 font-serif text-3xl font-black">
-        <span className="foil-text">My Collection</span>
-      </h1>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-serif text-3xl font-black">
+          <span className="foil-text">My Collection</span>
+        </h1>
+        <button
+          onClick={() => setScanOpen(true)}
+          className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-ink/80 transition hover:border-gold/60 hover:text-gold"
+        >
+          📷 Scan a photo to bulk add
+        </button>
+      </div>
+
+      {scanOpen && (
+        <ScanImportModal
+          onClose={() => setScanOpen(false)}
+          onDone={() => {
+            load();
+          }}
+        />
+      )}
 
       {totals && (
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
