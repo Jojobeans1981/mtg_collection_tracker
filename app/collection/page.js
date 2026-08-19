@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../components/AuthProvider';
+import ValueHistoryChart from '../../components/ValueHistoryChart';
+import BiggestMovers from '../../components/BiggestMovers';
 
 function fmt(n) {
   return `$${Number(n || 0).toFixed(2)}`;
@@ -13,6 +15,8 @@ export default function CollectionPage() {
   const [items, setItems] = useState([]);
   const [totals, setTotals] = useState(null);
   const [fetching, setFetching] = useState(true);
+  const [history, setHistory] = useState([]);
+  const [movers, setMovers] = useState([]);
 
   async function load() {
     setFetching(true);
@@ -23,6 +27,19 @@ export default function CollectionPage() {
       setTotals(data.totals || null);
     }
     setFetching(false);
+
+    // Fetch after the collection load above, since that call is what writes
+    // today's snapshot rows in the first place.
+    try {
+      const histRes = await fetch('/api/collection/history');
+      if (histRes.ok) {
+        const histData = await histRes.json();
+        setHistory(histData.history || []);
+        setMovers(histData.movers || []);
+      }
+    } catch {
+      // history/movers are a bonus widget — a failure here shouldn't block the page
+    }
   }
 
   useEffect(() => {
@@ -68,6 +85,13 @@ export default function CollectionPage() {
           <Stat label="Cards tracked" value={totals.cardCount} tone="plain" />
           <Stat label="If you sold to a dealer" value={fmt(totals.collectorSellTotal)} tone="collector" />
           <Stat label="Dealer retail value" value={fmt(totals.dealerSellTotal)} tone="dealer" />
+        </div>
+      )}
+
+      {!fetching && totals && totals.cardCount > 0 && (
+        <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr]">
+          <ValueHistoryChart history={history} />
+          <BiggestMovers movers={movers} />
         </div>
       )}
 

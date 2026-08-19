@@ -59,7 +59,36 @@ export async function GET() {
     { collectorSellTotal: 0, dealerSellTotal: 0, cardCount: 0 }
   );
 
+  // Best-effort snapshot for the value-history chart and biggest-movers
+  // widget — never let a snapshot failure break the collection view itself.
+  try {
+    await recordSnapshots(session.userId, items, totals);
+  } catch {
+    // ignore — snapshots are a nice-to-have, not core functionality
+  }
+
   return NextResponse.json({ items, totals });
+}
+
+async function recordSnapshots(userId, items, totals) {
+  await query(
+    `INSERT INTO collection_value_snapshots (user_id, captured_at, sell_total, retail_total)
+     VALUES ($1, CURRENT_DATE, $2, $3)
+     ON CONFLICT (user_id, captured_at) DO UPDATE SET sell_total = $2, retail_total = $3`,
+    [userId, totals.collectorSellTotal, totals.dealerSellTotal]
+  );
+
+  const seen = new Set();
+  for (const item of items) {
+    if (seen.has(item.scryfallId)) continue;
+    seen.add(item.scryfallId);
+    await query(
+      `INSERT INTO price_snapshots (scryfall_id, captured_at, card_name, buy_price, retail_price)
+       VALUES ($1, CURRENT_DATE, $2, $3, $4)
+       ON CONFLICT (scryfall_id, captured_at) DO NOTHING`,
+      [item.scryfallId, item.name, item.prices.collectorSell, item.prices.dealerSell]
+    );
+  }
 }
 
 export async function POST(req) {
