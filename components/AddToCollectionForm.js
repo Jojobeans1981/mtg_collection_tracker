@@ -46,7 +46,16 @@ export default function AddToCollectionForm({ card }) {
       })
     });
     setBusy(false);
-    setStatus(res.ok ? 'Added to your collection.' : 'Could not add card.');
+    if (!res.ok) {
+      setStatus('Could not add card.');
+      return;
+    }
+    const data = await res.json().catch(() => null);
+    setStatus(
+      data?.merged
+        ? `Already had this one (same edition/foil/condition) — now at ${data.quantity}.`
+        : 'Added to your collection.'
+    );
   }
 
   return (

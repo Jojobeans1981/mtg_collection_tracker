@@ -104,11 +104,18 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Missing card details.' }, { status: 400 });
   }
 
+  const addedQty = Math.max(1, Number(quantity) || 1);
+
+  // Same printing + foil + condition already in this user's collection ->
+  // bump its quantity instead of creating a duplicate row (enforced by the
+  // unique index in lib/db.js).
   const result = await query(
     `INSERT INTO collection_items
       (user_id, scryfall_id, card_name, set_code, collector_number, foil, condition, quantity, image_url)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-     RETURNING id`,
+     ON CONFLICT (user_id, scryfall_id, foil, condition)
+     DO UPDATE SET quantity = collection_items.quantity + EXCLUDED.quantity
+     RETURNING id, quantity`,
     [
       session.userId,
       scryfallId,
@@ -117,10 +124,11 @@ export async function POST(req) {
       collectorNumber || null,
       Boolean(foil),
       condition || 'Near Mint',
-      Math.max(1, Number(quantity) || 1),
+      addedQty,
       image || null
     ]
   );
 
-  return NextResponse.json({ id: result.rows[0].id });
+  const { id, quantity: finalQuantity } = result.rows[0];
+  return NextResponse.json({ id, quantity: finalQuantity, merged: finalQuantity > addedQty });
 }
