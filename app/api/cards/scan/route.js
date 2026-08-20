@@ -35,6 +35,10 @@ export async function POST(req) {
   try {
     detected = await identifyCardsFromImage(base64, mediaType);
   } catch (err) {
+    // Log the real cause server-side (Vercel runtime logs) — the user only
+    // ever sees the generic message below, but this is what lets us debug
+    // "scan failed" reports without guessing.
+    console.error('cardVision failed:', err?.message || err);
     return NextResponse.json({ error: 'Scan failed — try a clearer, well-lit photo.' }, { status: 502 });
   }
 
