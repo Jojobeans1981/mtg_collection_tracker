@@ -27,6 +27,22 @@ body::before {
   mask-image: radial-gradient(ellipse 100% 60% at 50% 0%, black, transparent 70%);
 }
 
+/* Faint tiled watermark of the five mana colors (abstracted sun/droplet/
+   crescent/flame/leaf glyphs, not the official WOTC symbol artwork) —
+   engraved-vault-door texture behind every page. Opacity is intentionally
+   low enough to read as texture, not decoration competing with content. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg fill='none' stroke='%23f1e9ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(30,34) rotate(-8)'%3E%3Ccircle cx='0' cy='0' r='9'/%3E%3Cpath d='M0,-16 L0,-22 M0,16 L0,22 M-16,0 L-22,0 M16,0 L22,0 M-11,-11 L-15,-15 M11,-11 L15,-15 M-11,11 L-15,15 M11,11 L15,15'/%3E%3C/g%3E%3Cg transform='translate(150,50) rotate(6)'%3E%3Cpath d='M0,-16 C10,-2 12,8 0,16 C-12,8 -10,-2 0,-16 Z'/%3E%3C/g%3E%3Cg transform='translate(60,130) rotate(15)'%3E%3Cpath d='M10,-14 A16,16 0 1 0 10,14 A12,12 0 1 1 10,-14 Z'/%3E%3C/g%3E%3Cg transform='translate(170,150) rotate(-10)'%3E%3Cpath d='M0,16 C-10,10 -10,-4 0,-16 C4,-6 2,-2 6,-6 C10,2 8,12 0,16 Z'/%3E%3C/g%3E%3Cg transform='translate(105,195) rotate(20)'%3E%3Cpath d='M0,-16 C12,-10 12,10 0,16 C-12,10 -12,-10 0,-16 Z M0,-14 L0,14'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: 220px 220px;
+  background-repeat: repeat;
+}
+
 .card-shadow {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
 }

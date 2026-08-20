@@ -85,22 +85,17 @@ export default function CollectionPage() {
         <h1 className="font-serif text-3xl font-black">
           <span className="foil-text">My Collection</span>
         </h1>
-        {/* Photo-scan bulk add is paused — the Anthropic account behind it has
-            no credit balance yet, so it can't actually work right now. Left
-            visible-but-disabled instead of hidden so it's clear this is
-            coming soon, not missing. Flip SCAN_FEATURE_ENABLED back on once
-            billing is set up. */}
         <button
           disabled={!SCAN_FEATURE_ENABLED}
           onClick={() => SCAN_FEATURE_ENABLED && setScanOpen(true)}
-          title={SCAN_FEATURE_ENABLED ? undefined : 'Coming back soon — billing setup in progress.'}
+          title={SCAN_FEATURE_ENABLED ? undefined : 'Coming back soon.'}
           className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
             SCAN_FEATURE_ENABLED
               ? 'border-white/15 text-ink/80 hover:border-gold/60 hover:text-gold'
               : 'cursor-not-allowed border-white/10 text-ink/30'
           }`}
         >
-          🚧 📷 Scan a photo to bulk add — under renovation
+          {SCAN_FEATURE_ENABLED ? '📷 Scan a photo to bulk add' : '🚧 📷 Scan a photo to bulk add — under renovation'}
         </button>
       </div>
 
