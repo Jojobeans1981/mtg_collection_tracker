@@ -7,10 +7,8 @@ import ValueHistoryChart from '../../components/ValueHistoryChart';
 import BiggestMovers from '../../components/BiggestMovers';
 import ScanImportModal from '../../components/ScanImportModal';
 
-// Photo-scan bulk add is built and working, but paused until the Anthropic
-// account backing it has a real credit balance — flip this back to true
-// once billing is set up in console.anthropic.com.
-const SCAN_FEATURE_ENABLED = false;
+// Photo-scan bulk add — live, backed by Gemini's free tier (GEMINI_API_KEY).
+const SCAN_FEATURE_ENABLED = true;
 
 function fmt(n) {
   return `$${Number(n || 0).toFixed(2)}`;
