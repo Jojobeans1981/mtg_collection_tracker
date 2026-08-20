@@ -13,7 +13,7 @@ export async function POST(req) {
 
   if (!visionConfigured()) {
     return NextResponse.json(
-      { error: "Photo scanning isn't set up yet — the site owner needs to add an ANTHROPIC_API_KEY." },
+      { error: "Photo scanning isn't set up yet — the site owner needs to add a GEMINI_API_KEY." },
       { status: 503 }
     );
   }
