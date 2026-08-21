@@ -1,10 +1,32 @@
 import { getCardById, cardImage, getCardPrintings } from '../../../lib/scryfall';
 import { getCardPrices } from '../../../lib/prices';
+import { getSession } from '../../../lib/auth';
+import { query, dbConfigured } from '../../../lib/db';
 import PriceBadge from '../../../components/PriceBadge';
 import AddToCollectionForm from '../../../components/AddToCollectionForm';
 import CardVersionPicker from '../../../components/CardVersionPicker';
 
 export const dynamic = 'force-dynamic';
+
+// How many of this exact printing, and how many total across every edition
+// of the card by name, the signed-in user already has tracked - so "add to
+// collection" isn't a guess at whether you already own this one.
+async function getOwnedCounts(userId, scryfallId, name) {
+  if (!userId || !dbConfigured()) return { exact: 0, total: 0 };
+  try {
+    const result = await query(
+      `SELECT
+         COALESCE(SUM(quantity) FILTER (WHERE scryfall_id = $2), 0) AS exact_qty,
+         COALESCE(SUM(quantity), 0) AS total_qty
+       FROM collection_items
+       WHERE user_id = $1 AND LOWER(card_name) = LOWER($3)`,
+      [userId, scryfallId, name]
+    );
+    return { exact: Number(result.rows[0].exact_qty), total: Number(result.rows[0].total_qty) };
+  } catch {
+    return { exact: 0, total: 0 };
+  }
+}
 
 export default async function CardDetailPage({ params }) {
   const card = await getCardById(params.id);
@@ -12,7 +34,9 @@ export default async function CardDetailPage({ params }) {
     return <p>Card not found.</p>;
   }
 
-  const [prices, printings] = await Promise.all([
+  const session = await getSession();
+
+  const [prices, printings, owned] = await Promise.all([
     getCardPrices({
       scryfallId: card.id,
       name: card.name,
@@ -21,7 +45,8 @@ export default async function CardDetailPage({ params }) {
       usdFoil: card.prices?.usd_foil,
       foil: false
     }),
-    getCardPrintings(card)
+    getCardPrintings(card),
+    getOwnedCounts(session?.userId, card.id, card.name)
   ]);
 
   const summary = {
@@ -73,6 +98,13 @@ export default async function CardDetailPage({ params }) {
           )}
           {card.flavor_text && <p className="text-sm italic text-ink/50">{card.flavor_text}</p>}
           {card.artist && <p className="text-xs text-ink/40">Illustrated by {card.artist}</p>}
+
+          {session && owned.total > 0 && (
+            <p className="text-sm text-gold">
+              ✦ You already have {owned.exact} of this exact printing
+              {owned.total > owned.exact && ` (${owned.total} total across all editions)`}.
+            </p>
+          )}
 
           <AddToCollectionForm card={summary} />
         </div>
