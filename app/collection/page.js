@@ -232,7 +232,8 @@ export default function CollectionPage() {
             </button>
           )}
           <span className="ml-auto text-xs text-ink/40">
-            {visibleItems.length} of {items.length} shown
+            {visibleItems.reduce((sum, i) => sum + i.quantity, 0)} of {totals?.cardCount ?? 0} cards shown
+            {visibleItems.length !== items.length && ` (${visibleItems.length} of ${items.length} entries)`}
           </span>
         </div>
       )}
