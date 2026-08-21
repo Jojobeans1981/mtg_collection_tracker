@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../components/AuthProvider';
 import ValueHistoryChart from '../../components/ValueHistoryChart';
@@ -14,6 +14,21 @@ function fmt(n) {
   return `$${Number(n || 0).toFixed(2)}`;
 }
 
+const SORTS = {
+  recent: { label: 'Recently added', cmp: null }, // items already arrive newest-first from the API
+  name: { label: 'Name (A-Z)', cmp: (a, b) => a.name.localeCompare(b.name) },
+  set: { label: 'Set', cmp: (a, b) => (a.setCode || '').localeCompare(b.setCode || '') || a.name.localeCompare(b.name) },
+  qty: { label: 'Quantity (high-low)', cmp: (a, b) => b.quantity - a.quantity },
+  sellValue: {
+    label: 'You-sell value (high-low)',
+    cmp: (a, b) => (b.prices.collectorSell || 0) * b.quantity - (a.prices.collectorSell || 0) * a.quantity
+  },
+  dealerValue: {
+    label: 'Dealer value (high-low)',
+    cmp: (a, b) => (b.prices.dealerSell || 0) * b.quantity - (a.prices.dealerSell || 0) * a.quantity
+  }
+};
+
 export default function CollectionPage() {
   const { user, loading } = useAuth();
   const [items, setItems] = useState([]);
@@ -22,6 +37,10 @@ export default function CollectionPage() {
   const [history, setHistory] = useState([]);
   const [movers, setMovers] = useState([]);
   const [scanOpen, setScanOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [setFilter, setSetFilter] = useState('');
+  const [foilOnly, setFoilOnly] = useState(false);
+  const [sortBy, setSortBy] = useState('recent');
 
   async function load() {
     setFetching(true);
@@ -65,6 +84,29 @@ export default function CollectionPage() {
     load();
   }
 
+  const setOptions = useMemo(() => {
+    const seen = new Map();
+    for (const item of items) {
+      if (item.setCode && !seen.has(item.setCode)) seen.set(item.setCode, item.setCode.toUpperCase());
+    }
+    return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [items]);
+
+  const visibleItems = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    let list = items.filter((item) => {
+      if (needle && !item.name.toLowerCase().includes(needle)) return false;
+      if (setFilter && item.setCode !== setFilter) return false;
+      if (foilOnly && !item.foil) return false;
+      return true;
+    });
+    const cmp = SORTS[sortBy]?.cmp;
+    if (cmp) list = [...list].sort(cmp);
+    return list;
+  }, [items, query, setFilter, foilOnly, sortBy]);
+
+  const filtersActive = Boolean(query || setFilter || foilOnly || sortBy !== 'recent');
+
   if (!loading && !user) {
     return (
       <div className="glass card-shadow mx-auto max-w-sm rounded-2xl p-8 text-center">
@@ -81,6 +123,13 @@ export default function CollectionPage() {
 
   return (
     <div>
+      <div className="mb-5 flex items-center gap-2 text-sm font-semibold">
+        <span className="rounded-full bg-white/10 px-4 py-2 text-gold">My Collection</span>
+        <Link href="/collection/trends" className="rounded-full px-4 py-2 text-ink/60 transition hover:text-cyan">
+          Price Trends
+        </Link>
+      </div>
+
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-serif text-3xl font-black">
           <span className="foil-text">My Collection</span>
@@ -134,8 +183,66 @@ export default function CollectionPage() {
         </p>
       )}
 
+      {!fetching && items.length > 0 && (
+        <div className="glass mb-4 flex flex-wrap items-center gap-2.5 rounded-xl p-3">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Filter by name…"
+            className="min-w-0 flex-1 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-parchment placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-cyan"
+          />
+          <select
+            value={setFilter}
+            onChange={(e) => setSetFilter(e.target.value)}
+            className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-cyan"
+          >
+            <option value="" className="bg-void2 text-parchment">All sets</option>
+            {setOptions.map(([code, label]) => (
+              <option key={code} value={code} className="bg-void2 text-parchment">
+                {label}
+              </option>
+            ))}
+          </select>
+          <label className="flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-sm text-ink/70">
+            <input type="checkbox" checked={foilOnly} onChange={(e) => setFoilOnly(e.target.checked)} className="accent-gold" />
+            ✦ Foil only
+          </label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-cyan"
+          >
+            {Object.entries(SORTS).map(([key, s]) => (
+              <option key={key} value={key} className="bg-void2 text-parchment">
+                Sort: {s.label}
+              </option>
+            ))}
+          </select>
+          {filtersActive && (
+            <button
+              onClick={() => {
+                setQuery('');
+                setSetFilter('');
+                setFoilOnly(false);
+                setSortBy('recent');
+              }}
+              className="text-sm text-ember/70 hover:text-ember"
+            >
+              Clear
+            </button>
+          )}
+          <span className="ml-auto text-xs text-ink/40">
+            {visibleItems.length} of {items.length} shown
+          </span>
+        </div>
+      )}
+
+      {!fetching && items.length > 0 && visibleItems.length === 0 && (
+        <p className="text-ink/60">No cards match those filters.</p>
+      )}
+
       <div className="space-y-2.5">
-        {items.map((item) => (
+        {visibleItems.map((item) => (
           <div key={item.id} className="glass card-shadow flex items-center gap-3 rounded-xl p-3 transition hover:ring-1 hover:ring-cyan/40">
             {item.image ? (
               <img src={item.image} alt={item.name} className="h-16 w-12 rounded object-cover ring-1 ring-white/10" />
