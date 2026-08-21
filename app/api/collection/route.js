@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../lib/auth';
 import { query, dbConfigured } from '../../../lib/db';
-import { getCardById } from '../../../lib/scryfall';
+import { getCardsByIds } from '../../../lib/scryfall';
 import { getCardPrices } from '../../../lib/prices';
 
 export async function GET() {
@@ -15,11 +15,16 @@ export async function GET() {
     [session.userId]
   );
 
+  // One (or a couple, above 75 distinct cards) batched Scryfall lookup for
+  // the whole collection instead of one request per row — see
+  // getCardsByIds for why that matters at real collection sizes.
+  const cardsById = await getCardsByIds(result.rows.map((r) => r.scryfall_id)).catch(() => new Map());
+
   const items = await Promise.all(
     result.rows.map(async (row) => {
       let prices = { collectorSell: null, dealerSell: null, collectorSellEstimated: true };
       try {
-        const card = await getCardById(row.scryfall_id);
+        const card = cardsById.get(row.scryfall_id);
         if (card) {
           prices = await getCardPrices({
             scryfallId: card.id,
